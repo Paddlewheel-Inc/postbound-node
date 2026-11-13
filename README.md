@@ -1,28 +1,27 @@
 <div align="left">
-  <img src="https://cdn.paddlewheel.org/brand/brandfull.svg" height="25px" alt="Postbound" />
+  <img src="https://cdn.paddlewheel.org/brand/paddlewheel/paddlewheelfullbrand.svg" height="25px" alt="Postbound" />
 </div>
 
 # postbound-node
 
-> [!WARNING]
-> This repository belongs to **Paddlewheel Inc.** It is a **private repository** and is not intended for public contribution or redistribution.
+> [!NOTE]
+> This is a **public repository** maintained by **Paddlewheel Inc.** The code is open source under the [MIT License](LICENSE).
 
-Node.js and TypeScript SDK for [Postbound](https://postbound.app). Developers use it to send, schedule, and receive email, and to manage domains, API keys, audiences, contacts, and webhooks through [postbound-api](../postbound-api). It mirrors [resend-node](https://github.com/resend/resend-node), so moving from Resend is mostly a rename.
+Node.js and TypeScript SDK for [Postbound](https://postbound.app). Use it to send, schedule, and receive email, and to manage domains, API keys, audiences, contacts, and webhooks through the Postbound API. It mirrors [resend-node](https://github.com/resend/resend-node), so moving from Resend is mostly a rename.
 
-This package sends requests with customer API keys to production infrastructure and handles customer email content. Changes may reach customers after they are approved, merged, and published. Double check your work before you commit, and never put a real API key in code, tests, logs, or screenshots.
+This package sends requests with your API key to the Postbound API and handles your email content. Never put a real API key in code, tests, logs, issues, or screenshots.
 
-## Internal contributions
+## Contributing
 
-Contributions are limited to authorised Paddlewheel Inc. staff and approved contractors with repository access. If you are on the team but are not working on this package, contact the Technical Team or create a GitHub issue.
+Issues and pull requests are welcome. For a bug, include the SDK version, your Node.js version, and the `request_id` from the error response if you have one. For a larger change, open an issue first so we can agree on the approach before you write the code.
 
-> [!CAUTION]
-> This repository may contain draft code that has not yet been approved for production. Do not share contents externally, quote from unpublished drafts, or publish a release without sign-off from the Technical Team.
+Pull requests are reviewed by the Postbound team, and a change is only released after a maintainer approves and merges it. Report security problems privately to the Postbound team instead of opening a public issue.
 
-## Ownership, copyright, and trademarks
+## License and trademarks
 
-All content in this repository, including the source code, documentation, policy text, structure, and accompanying materials, is the property of **Paddlewheel Inc.** and is protected under applicable copyright and intellectual property laws.
+The source code is released under the [MIT License](LICENSE), Copyright (c) 2026 Paddlewheel Inc.
 
-The **Postbound** name, logo, and associated branding are the property of Paddlewheel Inc. and are protected by applicable trademark, copyright, and intellectual property laws. Unauthorised use, reproduction, distribution, modification, or representation of Postbound branding or repository contents is not permitted without prior written consent from Paddlewheel Inc.
+The **Postbound** name, logo, and associated branding are the property of Paddlewheel Inc. and are protected by applicable trademark, copyright, and intellectual property laws. The MIT License covers the code, not the branding. Unauthorised use, reproduction, modification, or representation of Postbound branding is not permitted without prior written consent from Paddlewheel Inc.
 
 ## Tech stack
 
@@ -36,24 +35,26 @@ The **Postbound** name, logo, and associated branding are the property of Paddle
 
 ## Getting started
 
-You need Node.js 20+ and pnpm. To exercise the SDK against a real server, run [postbound-api](../postbound-api) locally.
+You need Node.js 20+ and pnpm.
 
 ```bash
+git clone https://github.com/Paddlewheel-Inc/postbound-node.git
+cd postbound-node
 pnpm install
 pnpm build
 ```
 
-To try your changes against a local API, start it from `postbound-api` with `make run`, create an account and key with `make bootstrap NAME="Acme"`, then point the SDK at it:
+To try your changes against the API, create an API key in the Postbound portal and run a script against `src`:
 
 ```ts
 import { Postbound } from './src';
 
-const postbound = new Postbound(process.env.POSTBOUND_API_KEY, {
-  baseUrl: 'http://localhost:8080',
-});
+const postbound = new Postbound(process.env.POSTBOUND_API_KEY);
+
+console.log(await postbound.domains.list());
 ```
 
-The local API listens on `http://localhost:8080`. Use a key from a development account, never a production one.
+Use a key from a test account where you can, and a `sending_access` key if you only need to send.
 
 ## Environment variables
 
@@ -68,7 +69,7 @@ The SDK reads these variables when the matching constructor option is not set. D
 
 Explicit constructor options win over environment variables, and empty variables are ignored.
 
-If a key or secret is committed by accident, treat it as compromised, revoke it in the Postbound portal, and report it to your supervisor immediately. Deleting the file from git is not enough.
+If a key or secret is committed by accident, treat it as compromised, and revoke it in the Postbound portal immediately. Deleting the file from git is not enough, because it stays in the history.
 
 ## Scripts
 
@@ -1001,7 +1002,7 @@ What differs:
 - Each resource lives in its own folder under `src/` with a class and an `interfaces.ts`. Shared types and helpers live in `src/common/`.
 - Request options use camelCase and are mapped to the API's snake_case inside the resource classes. Response types stay snake_case, exactly as the API returns them.
 - Methods never throw on API errors. They return `{ data, error, headers }` through the client in `src/postbound.ts`. Do not add code that throws for a failed response.
-- The SDK follows the shapes in [postbound-api](../postbound-api). If a handler or error name changes there, update the types and resource here to match.
+- The SDK follows the shapes of the Postbound API. If an endpoint, field, or error name changes there, update the types and resource here to match.
 - Do not add comments to source files. Prefer clear names and small functions.
 - If you add a resource, export its types from `src/index.ts` and document it under Usage.
 - Run `pnpm lint`, `pnpm typecheck`, and `pnpm build` before opening a pull request.
