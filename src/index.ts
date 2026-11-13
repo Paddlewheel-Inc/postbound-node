@@ -1,0 +1,12 @@
+export * from './api-keys/interfaces';
+export * from './audiences/interfaces';
+export * from './batch/interfaces';
+export * from './common/interfaces';
+export * from './contacts/interfaces';
+export * from './domains/interfaces';
+export * from './emails/interfaces';
+export * from './emails/receiving/interfaces';
+export type { ErrorCode, ErrorResponse, Response, Tag } from './interfaces';
+export { Postbound, type PostboundOptions } from './postbound';
+export * from './webhooks/events';
+export * from './webhooks/interfaces';

@@ -1,0 +1,63 @@
+{
+  "name": "postbound",
+  "version": "0.1.0",
+  "description": "Node.js library for the Postbound API",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "files": [
+    "dist/**"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsdown src/index.ts --format esm,cjs --dts",
+    "lint": "biome check .",
+    "lint:fix": "biome check . --write",
+    "prepublishOnly": "pnpm run build",
+    "typecheck": "tsc --noEmit"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Paddlewheel-Inc/postbound-node.git"
+  },
+  "author": "Paddlewheel Inc.",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Paddlewheel-Inc/postbound-node/issues"
+  },
+  "homepage": "https://github.com/Paddlewheel-Inc/postbound-node#readme",
+  "peerDependencies": {
+    "@react-email/render": "*"
+  },
+  "peerDependenciesMeta": {
+    "@react-email/render": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "standardwebhooks": "^1.1.1"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.6.7",
+    "@react-email/render": "^2.3.1",
+    "@types/node": "^26.6.6",
+    "@types/react": "^19.3.0",
+    "react": "^19.3.1",
+    "tsdown": "^0.23.7",
+    "typescript": "^7.0.2"
+  }
+}
