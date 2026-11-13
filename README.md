@@ -1,84 +1,102 @@
-<div align="center">
-
-# Postbound for Node.js
-
-**The official Node.js and TypeScript SDK for [Postbound](https://postbound.app).**<br />
-Send, schedule, and receive email. Manage domains, API keys, audiences, and webhooks.
-
-[Quickstart](#quickstart) · [Sending email](#sending-email) · [Receiving email](#receiving-email) · [Webhooks](#webhooks) · [Errors](#errors) · [Migrating from Resend](#migrating-from-resend)
-
+<div align="left">
+  <img src="https://cdn.paddlewheel.org/brand/brandfull.svg" height="25px" alt="Postbound" />
 </div>
 
----
+# postbound-node
 
-## Highlights
+> [!WARNING]
+> This repository belongs to **Paddlewheel Inc.** It is a **private repository** and is not intended for public contribution or redistribution.
 
-- **Fully typed.** Every request, response, and webhook event payload has a TypeScript type.
-- **No thrown API errors.** Every call resolves to `{ data, error, headers }`, so you handle failures with a plain `if`.
-- **Resend-compatible shapes.** Same method names, same options, same response envelope.
-- **Everything in one client.** Emails, batches, inbound mail, domains, API keys, audiences, contacts, and webhooks.
-- **React Email support.** Pass a component as `react` and it is rendered to HTML for you.
-- **Safe retries.** Send an `idempotencyKey` and a retried request never sends twice.
-- **Webhook verification built in.** Deliveries are signed with [Standard Webhooks](https://www.standardwebhooks.com), and `webhooks.verify` checks them in one call.
-- **ESM and CommonJS.** Ships both builds with type declarations. One runtime dependency.
+Node.js and TypeScript SDK for [Postbound](https://postbound.app). Developers use it to send, schedule, and receive email, and to manage domains, API keys, audiences, contacts, and webhooks through [postbound-api](../postbound-api). It mirrors [resend-node](https://github.com/resend/resend-node), so moving from Resend is mostly a rename.
 
-## Contents
+This package sends requests with customer API keys to production infrastructure and handles customer email content. Changes may reach customers after they are approved, merged, and published. Double check your work before you commit, and never put a real API key in code, tests, logs, or screenshots.
 
-- [Requirements](#requirements)
-- [Installation](#installation)
-- [Quickstart](#quickstart)
-- [Configuration](#configuration)
-- [Handling responses](#handling-responses)
-- [Sending email](#sending-email)
-  - [Attachments](#attachments)
-  - [React Email](#react-email)
-  - [Scheduling](#scheduling)
-  - [Idempotency](#idempotency)
-  - [Batch sending](#batch-sending)
-  - [Retrieving and listing](#retrieving-and-listing)
-- [Receiving email](#receiving-email)
-- [Domains](#domains)
-- [API keys](#api-keys)
-- [Audiences and contacts](#audiences-and-contacts)
-- [Webhooks](#webhooks)
-  - [Creating a webhook](#creating-a-webhook)
-  - [Events](#events)
-  - [Verifying deliveries](#verifying-deliveries)
-  - [Event payloads](#event-payloads)
-- [Pagination](#pagination)
-- [Request options](#request-options)
-- [Errors](#errors)
-- [Rate limits](#rate-limits)
-- [Limits](#limits)
-- [TypeScript](#typescript)
-- [Migrating from Resend](#migrating-from-resend)
-- [Development](#development)
-- [License](#license)
+## Internal contributions
 
-## Requirements
+Contributions are limited to authorised Paddlewheel Inc. staff and approved contractors with repository access. If you are on the team but are not working on this package, contact the Technical Team or create a GitHub issue.
 
-- Node.js 20 or later
-- A Postbound account and an [API key](#api-keys)
+> [!CAUTION]
+> This repository may contain draft code that has not yet been approved for production. Do not share contents externally, quote from unpublished drafts, or publish a release without sign-off from the Technical Team.
 
-## Installation
+## Ownership, copyright, and trademarks
+
+All content in this repository, including the source code, documentation, policy text, structure, and accompanying materials, is the property of **Paddlewheel Inc.** and is protected under applicable copyright and intellectual property laws.
+
+The **Postbound** name, logo, and associated branding are the property of Paddlewheel Inc. and are protected by applicable trademark, copyright, and intellectual property laws. Unauthorised use, reproduction, distribution, modification, or representation of Postbound branding or repository contents is not permitted without prior written consent from Paddlewheel Inc.
+
+## Tech stack
+
+- **Language:** [TypeScript](https://www.typescriptlang.org) `^7`
+- **Runtime:** [Node.js](https://nodejs.org) 20+, using the built-in `fetch`
+- **Webhook signatures:** [Standard Webhooks](https://www.standardwebhooks.com) `^1.1`, the only runtime dependency
+- **Email templates:** [React Email](https://react.email) via `@react-email/render`, an optional peer dependency
+- **Build:** [tsdown](https://tsdown.dev) `^0.23`, which emits ESM, CommonJS, and type declarations
+- **Linting and formatting:** [Biome](https://biomejs.dev) `^2`
+- **Package manager:** [pnpm](https://pnpm.io)
+
+## Getting started
+
+You need Node.js 20+ and pnpm. To exercise the SDK against a real server, run [postbound-api](../postbound-api) locally.
 
 ```bash
-npm install postbound
+pnpm install
+pnpm build
 ```
+
+To try your changes against a local API, start it from `postbound-api` with `make run`, create an account and key with `make bootstrap NAME="Acme"`, then point the SDK at it:
+
+```ts
+import { Postbound } from './src';
+
+const postbound = new Postbound(process.env.POSTBOUND_API_KEY, {
+  baseUrl: 'http://localhost:8080',
+});
+```
+
+The local API listens on `http://localhost:8080`. Use a key from a development account, never a production one.
+
+## Environment variables
+
+The SDK reads these variables when the matching constructor option is not set. Do not commit `.env` files, API keys, or webhook signing secrets.
+
+| Variable               | Purpose                                             | Default                     |
+| ---------------------- | --------------------------------------------------- | --------------------------- |
+| `POSTBOUND_API_KEY`    | API key used when none is passed to the constructor | none, required              |
+| `POSTBOUND_BASE_URL`   | API base URL                                        | `https://api.postbound.app` |
+| `POSTBOUND_USER_AGENT` | `User-Agent` header                                 | `postbound-node:<version>`  |
+| `POSTBOUND_DEBUG`      | Set to `true` to log every API error to stderr      | off                         |
+
+Explicit constructor options win over environment variables, and empty variables are ignored.
+
+If a key or secret is committed by accident, treat it as compromised, revoke it in the Postbound portal, and report it to your supervisor immediately. Deleting the file from git is not enough.
+
+## Scripts
+
+Scripts are defined in `package.json` and should be invoked through pnpm.
+
+```bash
+pnpm install         # install dependencies
+pnpm build           # bundle ESM, CommonJS, and type declarations into dist
+pnpm lint            # Biome checks
+pnpm lint:fix        # apply Biome fixes
+pnpm typecheck       # TypeScript without emitting
+```
+
+## Usage
+
+### Installation
 
 ```bash
 pnpm add postbound
 ```
 
 ```bash
-yarn add postbound
+npm install postbound
 ```
 
-```bash
-bun add postbound
-```
+Node.js 20 or later is required.
 
-## Quickstart
+### Quickstart
 
 1. Add and verify a sending domain in the Postbound portal, or with [`domains.create`](#domains).
 2. Create an API key and expose it as `POSTBOUND_API_KEY`.
@@ -105,31 +123,22 @@ if (error) {
 
 The `from` address must belong to a domain that is verified and has sending enabled. Otherwise the API rejects the request with a `validation_error` and a `403` status.
 
-## Configuration
+### What it covers
 
-Create one client and reuse it.
+| Client                       | What you can do                                                  |
+| ---------------------------- | ---------------------------------------------------------------- |
+| `postbound.emails`           | Send, schedule, reschedule, cancel, retrieve, and list emails    |
+| `postbound.batch`            | Send up to 100 emails in one request                             |
+| `postbound.emails.receiving` | Read inbound mail and its attachments                            |
+| `postbound.domains`          | Add, verify, configure, and remove sending and receiving domains |
+| `postbound.apiKeys`          | Create, list, and delete API keys                                |
+| `postbound.audiences`        | Manage mailing lists                                             |
+| `postbound.contacts`         | Manage the contacts in an audience                               |
+| `postbound.webhooks`         | Manage webhooks, send test deliveries, and verify signatures     |
 
-```ts
-import { Postbound } from 'postbound';
+Billing, workspaces, members, sign-in, and usage metrics are portal endpoints and are not part of the SDK.
 
-const postbound = new Postbound('pb_xxxxxxxxxxxxxxxx', {
-  baseUrl: 'https://api.postbound.app',
-  userAgent: 'my-app/1.0',
-});
-```
-
-If you omit the key, the client reads `POSTBOUND_API_KEY`. The constructor throws if neither is set.
-
-| Option      | Environment variable   | Default                                        |
-| ----------- | ---------------------- | ---------------------------------------------- |
-| key         | `POSTBOUND_API_KEY`    | none, required                                 |
-| `baseUrl`   | `POSTBOUND_BASE_URL`   | `https://api.postbound.app`                    |
-| `userAgent` | `POSTBOUND_USER_AGENT` | `postbound-node:<version>`                     |
-| none        | `POSTBOUND_DEBUG`      | Set to `true` to log every API error to stderr |
-
-Explicit options win over environment variables. Empty environment variables are ignored.
-
-## Handling responses
+### Handling responses
 
 No method throws on an API or network error. Each one resolves to an object with three fields:
 
@@ -139,7 +148,7 @@ No method throws on an API or network error. Each one resolves to an object with
 | `error`   | [`ErrorResponse`](#errors), or `null` | Set when the request failed                            |
 | `headers` | `Record<string, string>`, or `null`   | Response headers. `null` when no response was received |
 
-Exactly one of `data` and `error` is set. TypeScript narrows both for you:
+Exactly one of `data` and `error` is set, and TypeScript narrows both:
 
 ```ts
 const { data, error } = await postbound.domains.get('domain-id');
@@ -151,11 +160,9 @@ if (error) {
 console.log(data.status);
 ```
 
-The only thing that rejects is a request you cancel with an `AbortSignal`. It rejects with the abort reason.
+The only thing that rejects is a request you cancel with an `AbortSignal`, which rejects with the abort reason. Methods that return no body, such as `apiKeys.remove`, resolve with `data: {}`.
 
-Methods that return no useful body, such as `apiKeys.remove`, resolve with `data: {}`.
-
-## Sending email
+### Emails
 
 `emails.send` and `emails.create` are the same method.
 
@@ -192,7 +199,7 @@ const { data, error } = await postbound.emails.send({
 
 The response is `{ id: string }`. The email is queued, not delivered. Follow delivery with [webhooks](#webhooks) or [`emails.get`](#retrieving-and-listing).
 
-### Attachments
+#### Attachments
 
 Give each attachment either `content` or `path`, never both.
 
@@ -231,13 +238,9 @@ await postbound.emails.send({
 | `contentType` | `string`                                                  | Inferred from the file name when omitted                                       |
 | `contentId`   | `string`                                                  | Makes the attachment inline. Reference it with `cid:` in your HTML             |
 
-### React Email
+#### React Email
 
-Install [`@react-email/render`](https://www.npmjs.com/package/@react-email/render), which is an optional peer dependency, and pass a component as `react`.
-
-```bash
-npm install @react-email/render
-```
+Install [`@react-email/render`](https://www.npmjs.com/package/@react-email/render), an optional peer dependency, and pass a component as `react`.
 
 ```tsx
 import { Postbound } from 'postbound';
@@ -253,11 +256,11 @@ await postbound.emails.send({
 });
 ```
 
-When `react` is set, its rendered output replaces `html`. If the package is missing, the call throws an error that tells you what to install.
+When `react` is set, its rendered output replaces `html`. If the package is missing, the call throws an error that names what to install.
 
-### Scheduling
+#### Scheduling
 
-`scheduledAt` takes an ISO 8601 timestamp or a relative expression.
+`scheduledAt` takes an ISO 8601 timestamp or a relative expression such as `in 30 minutes`, `in 1 hour`, or `in 3 days`.
 
 ```ts
 await postbound.emails.send({
@@ -265,23 +268,9 @@ await postbound.emails.send({
   to: 'ada@example.org',
   subject: 'Your trial ends tomorrow',
   text: 'Upgrade to keep your data.',
-  scheduledAt: '2026-11-13T09:00:00Z',
-});
-
-await postbound.emails.send({
-  from: 'Acme <hello@acme.com>',
-  to: 'ada@example.org',
-  subject: 'Quick follow-up',
-  text: 'Any questions?',
   scheduledAt: 'in 2 hours',
 });
-```
 
-Relative expressions look like `in 30 minutes`, `in 1 hour`, or `in 3 days`. A time in the past sends the email immediately. By default, emails can be scheduled up to 30 days ahead.
-
-A scheduled email can be moved or cancelled until it is sent:
-
-```ts
 await postbound.emails.update({
   id: 'email-id',
   scheduledAt: '2026-11-14T09:00:00Z',
@@ -290,9 +279,9 @@ await postbound.emails.update({
 await postbound.emails.cancel('email-id');
 ```
 
-Both calls return `{ object: 'email', id }`. Once an email has been sent, they fail with an `invalid_state` error.
+A time in the past sends the email immediately, and by default emails can be scheduled up to 30 days ahead. `update` and `cancel` return `{ object: 'email', id }`, and fail with `invalid_state` once the email has been sent.
 
-### Idempotency
+#### Idempotency
 
 Pass an `idempotencyKey` to make a send safe to retry. Postbound stores the response for the key, 24 hours by default, and replays it for an identical request instead of sending again.
 
@@ -308,14 +297,14 @@ await postbound.emails.send(
 );
 ```
 
-- A replayed response has the header `Idempotent-Replayed: true`. Read it from `headers` as `idempotent-replayed`.
+- A replayed response has the header `Idempotent-Replayed: true`, available as `idempotent-replayed` in `headers`.
 - Reusing a key with a different body fails with `invalid_idempotent_request`.
 - Reusing a key while the first request is still running fails with `concurrent_idempotent_requests`.
 - Keys can be up to 256 characters.
 
-Idempotency applies to `emails.send`, `emails.create`, `batch.send`, and `batch.create`. Other create methods accept the option too, but the API only deduplicates sends.
+The API only deduplicates `emails.send`, `emails.create`, `batch.send`, and `batch.create`.
 
-### Batch sending
+#### Batch sending
 
 Send up to 100 emails in one request. If any email is invalid, none are sent, and the error message names the failing index, such as `emails[3]: Missing "subject" field.`
 
@@ -343,22 +332,16 @@ if (!error) {
 }
 ```
 
-Each item accepts the same options as `emails.send`, except `attachments` and `scheduledAt`, which batches do not support. `data.data` lists the IDs in the order you sent them. `batch.create` is an alias of `batch.send`.
+Each item accepts the same options as `emails.send`, except `attachments` and `scheduledAt`. `data.data` lists the IDs in the order you sent them. `batch.create` is an alias of `batch.send`.
 
-### Retrieving and listing
+#### Retrieving and listing
 
 ```ts
 const { data: email } = await postbound.emails.get('email-id');
 
 console.log(email?.last_event);
 console.log(email?.events);
-```
 
-`emails.get` returns the email plus its full delivery timeline in `events`, each with a `type`, `occurred_at`, and `metadata`.
-
-Email events: `queued`, `scheduled`, `sent`, `delivered`, `delivery_delayed`, `bounced`, `complained`, `opened`, `clicked`, `failed`, `canceled`.
-
-```ts
 const { data: page } = await postbound.emails.list({
   limit: 50,
   status: 'bounced',
@@ -366,7 +349,9 @@ const { data: page } = await postbound.emails.list({
 });
 ```
 
-| Option                     | Type         | Notes                                |
+`emails.get` returns the email plus its delivery timeline in `events`, each with a `type`, `occurred_at`, and `metadata`. Event types are `queued`, `scheduled`, `sent`, `delivered`, `delivery_delayed`, `bounced`, `complained`, `opened`, `clicked`, `failed`, and `canceled`.
+
+| List option                | Type         | Notes                                |
 | -------------------------- | ------------ | ------------------------------------ |
 | `status`                   | `EmailEvent` | Only emails whose last event matches |
 | `q`                        | `string`     | Search text, up to 200 characters    |
@@ -374,9 +359,9 @@ const { data: page } = await postbound.emails.list({
 
 List items leave out `html`, `text`, `tags`, and `events`. Call `emails.get` for those.
 
-## Receiving email
+### Receiving email
 
-Postbound can receive mail for your domains and expose it through the API.
+Postbound receives mail for your domains and exposes it through the API. Receiving uses a full-access API key.
 
 1. Turn on receiving for a verified domain:
 
@@ -387,7 +372,7 @@ Postbound can receive mail for your domains and expose it through the API.
    });
    ```
 
-2. Add the `Receiving` MX record that now appears in the domain's `records`, then verify:
+2. Publish the `Receiving` MX record that now appears in the domain's `records`, then verify:
 
    ```ts
    const { data: domain } = await postbound.domains.get('domain-id');
@@ -408,11 +393,9 @@ Postbound can receive mail for your domains and expose it through the API.
    console.log(email?.authentication);
    ```
 
-Receiving uses a full-access API key.
+`email.authentication` reports `spf`, `dkim`, and `dmarc`, each one of `pass`, `fail`, `gray`, `processing_failed`, or `unknown`.
 
-### Inline images
-
-By default, `cid:` references in `html` are replaced with `data:` URIs when the inline parts total 2 MB or less. Ask for the original references instead with `html_format`. Each reference then matches the `content_id` of an attachment.
+By default, `cid:` references in `html` are replaced with `data:` URIs when the inline parts total 2 MB or less. Ask for the original references with `html_format`, and each one then matches the `content_id` of an attachment. The `html_format` on the response says which format you received.
 
 ```ts
 const { data } = await postbound.emails.receiving.get('received-id', {
@@ -420,9 +403,7 @@ const { data } = await postbound.emails.receiving.get('received-id', {
 });
 ```
 
-The `html_format` field on the response says which format you received.
-
-### Attachments and raw messages
+Attachments and the raw message are returned as signed download URLs:
 
 ```ts
 const { data: attachments } = await postbound.emails.receiving.attachments.list(
@@ -440,15 +421,9 @@ const response = await fetch(attachment!.download_url);
 const bytes = Buffer.from(await response.arrayBuffer());
 ```
 
-`download_url` and the `raw.download_url` on a received email are signed. They are valid for one hour and need no `Authorization` header, so you can hand them to a browser or another service. Ask for a fresh one when it expires.
+`download_url` and `raw.download_url` are valid for one hour and need no `Authorization` header, so you can hand them to a browser or another service. Ask for a fresh one when it expires. To react to inbound mail as it arrives, subscribe a webhook to [`email.received`](#events).
 
-### Authentication results
-
-`email.authentication` reports `spf`, `dkim`, and `dmarc`. Each is one of `pass`, `fail`, `gray`, `processing_failed`, or `unknown`.
-
-To react to inbound mail as it arrives, subscribe a webhook to [`email.received`](#events).
-
-## Domains
+### Domains
 
 ```ts
 const { data: domain } = await postbound.domains.create({
@@ -471,13 +446,13 @@ for (const record of domain?.records ?? []) {
 | `SPF`       | `MX`, `TXT` | Authorizes Postbound to send for the return path                 |
 | `Receiving` | `MX`        | Only listed when receiving is enabled                            |
 
-A domain moves through `not_started`, `pending`, `verified`, or `failed`. Check again after you publish the records:
+A domain is `not_started`, `pending`, `verified`, or `failed`. After you publish the records, ask Postbound to check again:
 
 ```ts
 await postbound.domains.verify('domain-id');
 ```
 
-`verify` returns `{ object: 'domain', id }` straight away. Read `status` with `domains.get`, or subscribe to the `domain.verified` and `domain.failed` [webhook events](#events).
+`verify` returns `{ object: 'domain', id }` straight away. Read `status` with `domains.get`, or subscribe to the `domain.verified` and `domain.failed` [events](#events).
 
 ```ts
 await postbound.domains.update({
@@ -502,7 +477,7 @@ await postbound.domains.remove('domain-id');
 
 Only the fields you pass are changed. At least one of sending and receiving must stay enabled.
 
-## API keys
+### API keys
 
 ```ts
 const { data, error } = await postbound.apiKeys.create({
@@ -528,9 +503,9 @@ await postbound.apiKeys.remove('key-id');
 | `full_access`    | Everything in this SDK. The default                 |
 | `sending_access` | Send email with `emails.send` and `batch.send` only |
 
-A `sending_access` key can be locked to one domain with `domainId`. Sending from any other domain fails. Any other call with a sending key fails with `restricted_api_key`. Use sending keys in your application servers and keep full-access keys for management tasks.
+A `sending_access` key can be locked to one domain with `domainId`, and sending from any other domain fails. Any other call with a sending key fails with `restricted_api_key`. Use sending keys in application servers and keep full-access keys for management tasks.
 
-## Audiences and contacts
+### Audiences and contacts
 
 ```ts
 const { data: audience } = await postbound.audiences.create({
@@ -544,9 +519,13 @@ const { data: contact } = await postbound.contacts.create({
   lastName: 'Lovelace',
   unsubscribed: false,
 });
+
+await postbound.audiences.get('audience-id');
+await postbound.audiences.list();
+await postbound.audiences.remove('audience-id');
 ```
 
-Look contacts up by `id` or by `email`:
+Look contacts up by `id` or by `email`, not both:
 
 ```ts
 await postbound.contacts.get({
@@ -571,21 +550,11 @@ const { data: contacts } = await postbound.contacts.list({
 });
 ```
 
-Pass `id` or `email`, not both. Passing neither resolves with a `missing_required_field` error and sends no request.
+Passing neither `id` nor `email` resolves with a `missing_required_field` error and sends no request. Creating a contact that already exists in the audience fails with `contact_already_exists`.
 
-Creating a contact that already exists in the audience fails with `contact_already_exists`.
-
-```ts
-await postbound.audiences.get('audience-id');
-await postbound.audiences.list();
-await postbound.audiences.remove('audience-id');
-```
-
-## Webhooks
+### Webhooks
 
 Webhooks push delivery, inbound mail, and domain events to your server.
-
-### Creating a webhook
 
 ```ts
 const { data, error } = await postbound.webhooks.create({
@@ -606,11 +575,7 @@ if (!error) {
 | `type`    | `'http' \| 'discord' \| 'teams'` | Defaults to `http`                               |
 | `enabled` | `boolean`                        | Defaults to `true`                               |
 
-An account can have up to 20 webhooks.
-
-**HTTP webhooks** send signed JSON and have a `signing_secret` that starts with `whsec_`. Read it from `create` or `get`.
-
-**Discord and Teams webhooks** post a formatted chat message instead of raw JSON, so they have no signing secret. Use the URL from your Discord channel integration or Teams Workflows. `type` cannot be changed after creation.
+An account can have up to 20 webhooks. `http` webhooks send signed JSON and have a `signing_secret` that starts with `whsec_`, returned by `create` and `get`. `discord` and `teams` webhooks post a formatted chat message instead, so they have no signing secret. `type` cannot be changed after creation.
 
 ```ts
 await postbound.webhooks.create({
@@ -618,29 +583,20 @@ await postbound.webhooks.create({
   url: 'https://discord.com/api/webhooks/123456789/abcdef',
   events: ['email.bounced', 'email.complained', 'domain.failed'],
 });
-```
 
-Manage webhooks:
-
-```ts
 await postbound.webhooks.get('webhook-id');
 await postbound.webhooks.list();
 await postbound.webhooks.update('webhook-id', { enabled: false });
-await postbound.webhooks.update('webhook-id', { events: ['email.delivered'] });
 await postbound.webhooks.remove('webhook-id');
+
+const { data: test } = await postbound.webhooks.test('webhook-id');
+
+console.log(test?.success, test?.status_code, test?.error);
 ```
 
-Fire a test delivery to check your endpoint:
+Each webhook reports `last_delivery_status`, which is `success`, `failed`, or `null` when nothing has been delivered. Failed deliveries are retried with backoff.
 
-```ts
-const { data } = await postbound.webhooks.test('webhook-id');
-
-console.log(data?.success, data?.status_code, data?.error);
-```
-
-Each webhook also reports `last_delivery_status` (`success`, `failed`, or `null` when nothing has been delivered). Failed deliveries are retried with backoff.
-
-### Events
+#### Events
 
 | Event                    | Fired when                                               |
 | ------------------------ | -------------------------------------------------------- |
@@ -656,11 +612,9 @@ Each webhook also reports `last_delivery_status` (`success`, `failed`, or `null`
 | `domain.verified`        | A domain finished verification                           |
 | `domain.failed`          | Domain verification failed or expired                    |
 
-### Verifying deliveries
+#### Verifying deliveries
 
-Always verify a delivery before you trust it. `webhooks.verify` checks the signature and the timestamp, then returns the parsed event. It throws if the signature is missing, invalid, or too old.
-
-Verify against the **raw** request body. A parsed and re-serialized body will not match the signature.
+Always verify a delivery before you trust it. `webhooks.verify` checks the signature and timestamp, then returns the parsed event. It throws if the signature is missing, invalid, or too old. Verify against the **raw** request body, because a parsed and re-serialized body will not match the signature.
 
 ```ts
 import express from 'express';
@@ -707,9 +661,9 @@ app.post(
 );
 ```
 
-Respond with a `2xx` status quickly and do slow work after you respond. Any other status counts as a failed delivery and is retried. A retry carries the same `webhook-id`, so use it to ignore duplicates.
+Respond with a `2xx` status quickly and do slow work afterwards. Any other status counts as a failed delivery and is retried. A retry carries the same `webhook-id`, so use it to ignore duplicates.
 
-With Next.js route handlers, use `await request.text()` for the payload:
+With Next.js route handlers, read the payload with `await request.text()`:
 
 ```ts
 import { Postbound } from 'postbound';
@@ -738,11 +692,11 @@ export async function POST(request: Request) {
 }
 ```
 
-### Event payloads
+#### Event payloads
 
 Every delivery has a `type`, a `created_at`, and a `data` object. The `type` field narrows `data` in TypeScript.
 
-**`email.*`** events
+`email.*` events:
 
 ```json
 {
@@ -762,7 +716,7 @@ Every delivery has a `type`, a `created_at`, and a `data` object. The `type` fie
 
 `metadata` is present when the event carries extra detail, such as a bounce reason.
 
-**`email.received`**
+`email.received`:
 
 ```json
 {
@@ -793,7 +747,7 @@ Every delivery has a `type`, a `created_at`, and a `data` object. The `type` fie
 
 The payload never includes message bodies or attachment content. Fetch them with [`emails.receiving.get`](#receiving-email).
 
-**`domain.verified` and `domain.failed`**
+`domain.verified` and `domain.failed`:
 
 ```json
 {
@@ -808,7 +762,7 @@ The payload never includes message bodies or attachment content. Fetch them with
 }
 ```
 
-**`webhook.test`**, sent by `webhooks.test`
+`webhook.test`, sent by `webhooks.test`:
 
 ```json
 {
@@ -820,17 +774,9 @@ The payload never includes message bodies or attachment content. Fetch them with
 }
 ```
 
-## Pagination
+### Pagination
 
-Every list method uses cursor pagination and returns:
-
-```ts
-{
-  object: 'list',
-  has_more: boolean,
-  data: Item[],
-}
-```
+Every list method uses cursor pagination and returns `{ object: 'list', has_more, data }`.
 
 | Option   | Type     | Notes                                                        |
 | -------- | -------- | ------------------------------------------------------------ |
@@ -838,9 +784,7 @@ Every list method uses cursor pagination and returns:
 | `after`  | `string` | Return items after this ID. Cannot be combined with `before` |
 | `before` | `string` | Return items before this ID. Cannot be combined with `after` |
 
-TypeScript stops you from passing both `after` and `before`.
-
-Walk every page:
+TypeScript stops you from passing both `after` and `before`. To walk every page:
 
 ```ts
 async function* allDomains() {
@@ -868,9 +812,9 @@ for await (const domain of allDomains()) {
 }
 ```
 
-Contacts and received-email attachments need their parent ID as well: `contacts.list({ audienceId })` and `emails.receiving.attachments.list({ emailId })`.
+Contacts and received-email attachments also need their parent ID: `contacts.list({ audienceId })` and `emails.receiving.attachments.list({ emailId })`.
 
-## Request options
+### Request options
 
 The last argument of every method sets per-request options.
 
@@ -889,7 +833,7 @@ await postbound.emails.get('email-id', {
 
 The client sends `Authorization: Bearer <key>`, `Content-Type: application/json`, and a `User-Agent`. Custom headers can override any of them.
 
-## Errors
+### Errors
 
 A failed call returns an `ErrorResponse`:
 
@@ -903,23 +847,6 @@ A failed call returns an `ErrorResponse`:
 ```
 
 `statusCode` is `null` when no response was received. Include `request_id` when you contact support.
-
-```ts
-const { error } = await postbound.emails.send(payload);
-
-if (error) {
-  switch (error.name) {
-    case 'rate_limit_exceeded':
-      break;
-    case 'validation_error':
-    case 'missing_required_field':
-    case 'invalid_parameter':
-      break;
-    default:
-      throw new Error(error.message);
-  }
-}
-```
 
 | `name`                            | Status         | Meaning                                                                                   |
 | --------------------------------- | -------------- | ----------------------------------------------------------------------------------------- |
@@ -948,15 +875,21 @@ if (error) {
 | `domain_verification_unavailable` | 502            | Domain verification is temporarily unavailable. Try again later                           |
 | `application_error`               | any, or `null` | The SDK could not reach the API or could not read its response                            |
 
-## Rate limits
+### Rate limits
 
 Requests are rate limited per account, so every API key on an account shares one budget. Every response carries `RateLimit-Limit` (the burst size), `RateLimit-Remaining`, and `RateLimit-Reset` headers. When you go over, the call fails with `rate_limit_exceeded`, and `Retry-After` says how many seconds to wait.
 
 ```ts
-async function sendWithRetry(payload: CreateEmailOptions, attempts = 3) {
+import type { CreateEmailOptions } from 'postbound';
+
+async function sendWithRetry(
+  payload: CreateEmailOptions,
+  key: string,
+  attempts = 3,
+) {
   for (let attempt = 1; ; attempt++) {
     const result = await postbound.emails.send(payload, {
-      idempotencyKey: `welcome-${payload.to}`,
+      idempotencyKey: key,
     });
 
     if (result.error?.name !== 'rate_limit_exceeded' || attempt === attempts) {
@@ -969,9 +902,9 @@ async function sendWithRetry(payload: CreateEmailOptions, attempts = 3) {
 }
 ```
 
-Header names are lower-cased in `headers`. Reusing the same idempotency key makes the retry safe.
+Header names are lower-cased in `headers`, and reusing the idempotency key makes each retry safe.
 
-## Limits
+### Limits
 
 | Limit                                                 | Value                                              |
 | ----------------------------------------------------- | -------------------------------------------------- |
@@ -990,11 +923,11 @@ Header names are lower-cased in `headers`. Reusing the same idempotency key make
 | Request body, everything else                         | 2 MB                                               |
 | Signed download URLs                                  | Valid for 1 hour                                   |
 
-Some values are configurable on the server and can differ on a self-hosted or enterprise deployment.
+Some values are configurable on the server and can differ between deployments.
 
-## TypeScript
+### TypeScript
 
-The package ships its own declarations. Every option and response type is exported from the root:
+The package ships its own declarations, and every option and response type is exported from the root.
 
 ```ts
 import type {
@@ -1009,15 +942,7 @@ import type {
 } from 'postbound';
 ```
 
-Naming follows one pattern per method:
-
-| Type                         | Meaning                                                                     |
-| ---------------------------- | --------------------------------------------------------------------------- |
-| `CreateEmailOptions`         | What you pass in                                                            |
-| `CreateEmailResponseSuccess` | The `data` you get back                                                     |
-| `CreateEmailResponse`        | `Response<CreateEmailResponseSuccess>`, the full `{ data, error, headers }` |
-
-Discriminate webhook events by `type`:
+Type names follow one pattern per method: `CreateEmailOptions` is what you pass in, `CreateEmailResponseSuccess` is the `data` you get back, and `CreateEmailResponse` is `Response<CreateEmailResponseSuccess>`, the full `{ data, error, headers }`. Discriminate webhook events by `type`:
 
 ```ts
 import type { WebhookEventPayload } from 'postbound';
@@ -1033,7 +958,7 @@ function handle(event: WebhookEventPayload) {
 }
 ```
 
-## Migrating from Resend
+### Migrating from Resend
 
 Postbound's API follows Resend's request and error shapes, so most code needs only a rename.
 
@@ -1058,50 +983,35 @@ What stays the same:
 
 What differs:
 
-| Resend                                                                                                               | Postbound                                                                        |
-| -------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| `RESEND_API_KEY`, `re_` keys                                                                                         | `POSTBOUND_API_KEY`, `pb_` keys                                                  |
-| `RESEND_BASE_URL`                                                                                                    | `POSTBOUND_BASE_URL`                                                             |
-| `segments`, `topics`, `broadcasts`, `templates`, `automations`, `events`, `logs`, `inboxes`, `suppressions`, `usage` | Not available. Postbound exposes the resources listed above                      |
-| `contacts` without an audience                                                                                       | Contacts always belong to an audience, so pass `audienceId`                      |
-| `emails.attachments`, `emails.share`, `emails.metrics`, `emails.receiving.forward`                                   | Not available                                                                    |
-| `batch.send(payload, { batchValidation })`                                                                           | Batches are always validated strictly. Any invalid email rejects the whole batch |
-| `webhooks.rotateSigningSecret`, `webhooks.events`                                                                    | Not available. Use `webhooks.test` to check an endpoint                          |
-| `topicId`, `template` on `emails.send`                                                                               | Not available                                                                    |
-| Webhook event `tags` as an object                                                                                    | `tags` is a `{ name, value }[]` array                                            |
-| Domain `records[].record` values                                                                                     | `Ownership`, `DKIM`, `SPF`, and `Receiving`                                      |
+| Resend                                                                                                               | Postbound                                                                            |
+| -------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `RESEND_API_KEY`, `re_` keys                                                                                         | `POSTBOUND_API_KEY`, `pb_` keys                                                      |
+| `RESEND_BASE_URL`                                                                                                    | `POSTBOUND_BASE_URL`                                                                 |
+| `segments`, `topics`, `broadcasts`, `templates`, `automations`, `events`, `logs`, `inboxes`, `suppressions`, `usage` | Not available                                                                        |
+| `contacts` without an audience                                                                                       | Contacts always belong to an audience, so pass `audienceId`                          |
+| `emails.attachments`, `emails.share`, `emails.metrics`, `emails.receiving.forward`                                   | Not available                                                                        |
+| `batch.send(payload, { batchValidation })`                                                                           | Batches are always validated strictly, and any invalid email rejects the whole batch |
+| `webhooks.rotateSigningSecret`, `webhooks.events`                                                                    | Not available. Use `webhooks.test` to check an endpoint                              |
+| `topicId`, `template` on `emails.send`                                                                               | Not available                                                                        |
+| Webhook event `tags` as an object                                                                                    | `tags` is a `{ name, value }[]` array                                                |
+| Domain `records[].record` values                                                                                     | `Ownership`, `DKIM`, `SPF`, and `Receiving`                                          |
 
-## Development
+## Notes
+
+- Each resource lives in its own folder under `src/` with a class and an `interfaces.ts`. Shared types and helpers live in `src/common/`.
+- Request options use camelCase and are mapped to the API's snake_case inside the resource classes. Response types stay snake_case, exactly as the API returns them.
+- Methods never throw on API errors. They return `{ data, error, headers }` through the client in `src/postbound.ts`. Do not add code that throws for a failed response.
+- The SDK follows the shapes in [postbound-api](../postbound-api). If a handler or error name changes there, update the types and resource here to match.
+- Do not add comments to source files. Prefer clear names and small functions.
+- If you add a resource, export its types from `src/index.ts` and document it under Usage.
+- Run `pnpm lint`, `pnpm typecheck`, and `pnpm build` before opening a pull request.
+
+## Committing changes
+
+Please use https://www.conventionalcommits.org/en/v1.0.0/ when commiting any changes.
 
 ```bash
-pnpm install
-pnpm build
-pnpm lint
-pnpm typecheck
+git add .
+git commit -m "your message"
+git push
 ```
-
-| Script           | What it does                                             |
-| ---------------- | -------------------------------------------------------- |
-| `pnpm build`     | Bundles ESM, CommonJS, and type declarations into `dist` |
-| `pnpm lint`      | Runs Biome checks                                        |
-| `pnpm lint:fix`  | Applies Biome fixes                                      |
-| `pnpm typecheck` | Runs the TypeScript compiler without emitting            |
-
-Source layout:
-
-```text
-src/
-  postbound.ts     the client and its HTTP layer
-  emails/          emails and inbound mail
-  batch/           batch sending
-  domains/         domains
-  api-keys/        API keys
-  audiences/       audiences
-  contacts/        contacts
-  webhooks/        webhook management, events, and verification
-  common/          shared types and helpers
-```
-
-## License
-
-[MIT](LICENSE) © Paddlewheel Inc.
