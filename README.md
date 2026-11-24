@@ -37,7 +37,7 @@ The **Postbound** name, logo, and associated branding are the property of Paddle
 
 ## Getting started
 
-You need Node.js 20+ and pnpm.
+You need Node.js 22.13+ and pnpm 11 to work on the SDK. Using the SDK only needs Node.js 20+.
 
 ```bash
 git clone https://github.com/Paddlewheel-Inc/postbound-node.git

@@ -10,7 +10,7 @@ Thank you for contributing to the Postbound Node.js SDK.
 
 ## Setup
 
-You need Node.js 20 or newer and [pnpm](https://pnpm.io).
+You need Node.js 22.13 or newer and [pnpm](https://pnpm.io) 11 to work on the SDK, because pnpm 11 requires it. The SDK itself runs on Node.js 20 or newer, and CI checks the built package on Node.js 20, 22, and 24.
 
 ```bash
 pnpm install
