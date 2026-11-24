@@ -1,0 +1,50 @@
+name: Bug report
+description: Something in the SDK does not work as documented
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Never paste a real API key, signing secret, or email content. Redact them first.
+  - type: input
+    id: sdk-version
+    attributes:
+      label: SDK version
+      placeholder: 0.1.0
+    validations:
+      required: true
+  - type: input
+    id: node-version
+    attributes:
+      label: Node.js version
+      placeholder: 22.11.0
+    validations:
+      required: true
+  - type: dropdown
+    id: module
+    attributes:
+      label: Module format
+      options:
+        - ESM
+        - CommonJS
+        - TypeScript
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: Include what you expected and what you got instead.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      render: ts
+    validations:
+      required: true
+  - type: input
+    id: request-id
+    attributes:
+      label: request_id
+      description: The request_id from the error response, if you have one.

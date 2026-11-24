@@ -1,0 +1,8 @@
+node_modules
+dist
+dist-pack
+build
+.env
+.env.test
+.idea
+.DS_Store
