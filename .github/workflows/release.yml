@@ -96,7 +96,7 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_TAG: ${{ needs.verify.outputs.npm_tag }}
-        run: npm publish dist-pack/*.tgz --ignore-scripts --provenance --access public --tag "$NPM_TAG"
+        run: npm publish ./dist-pack/*.tgz --ignore-scripts --provenance --access public --tag "$NPM_TAG"
 
   github-release:
     name: Create GitHub release
