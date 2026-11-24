@@ -1,0 +1,119 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions: {}
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Verify release
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+      stable: ${{ steps.meta.outputs.stable }}
+      npm_tag: ${{ steps.meta.outputs.npm_tag }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Resolve release metadata
+        id: meta
+        run: |
+          VERSION="$(node -p "require('./package.json').version")"
+          if ! node -e 'process.exit(/^\d+\.\d+\.\d+(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$/.test(process.argv[1]) ? 0 : 1)' "$VERSION"; then
+            echo "::error::package.json version $VERSION is not a valid semver version"
+            exit 1
+          fi
+          if [ "$GITHUB_REF_NAME" != "v$VERSION" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match package.json version $VERSION"
+            exit 1
+          fi
+          case "$VERSION" in
+            *-*)
+              STABLE=false
+              PRERELEASE="${VERSION#*-}"
+              NPM_TAG="${PRERELEASE%%.*}"
+              ;;
+            *)
+              STABLE=true
+              NPM_TAG=latest
+              ;;
+          esac
+          {
+            echo "version=$VERSION"
+            echo "stable=$STABLE"
+            echo "npm_tag=$NPM_TAG"
+          } >> "$GITHUB_OUTPUT"
+      - name: Verify the version is not already published
+        env:
+          VERSION: ${{ steps.meta.outputs.version }}
+        run: |
+          if npm view "postbound@$VERSION" version > /dev/null 2>&1; then
+            echo "::error::postbound@$VERSION is already published"
+            exit 1
+          fi
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check
+      - run: pnpm pack --pack-destination dist-pack
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: package
+          path: dist-pack/*.tgz
+          if-no-files-found: error
+
+  publish:
+    name: Publish to npm
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: package
+          path: dist-pack
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      - name: Publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_TAG: ${{ needs.verify.outputs.npm_tag }}
+        run: npm publish dist-pack/*.tgz --ignore-scripts --provenance --access public --tag "$NPM_TAG"
+
+  github-release:
+    name: Create GitHub release
+    needs: [verify, publish]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STABLE: ${{ needs.verify.outputs.stable }}
+        run: |
+          if [ "$STABLE" = "true" ]; then
+            gh release create "$GITHUB_REF_NAME" --generate-notes --verify-tag
+          else
+            gh release create "$GITHUB_REF_NAME" --generate-notes --verify-tag --prerelease
+          fi

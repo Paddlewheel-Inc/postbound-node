@@ -9,35 +9,38 @@ importers:
   .:
     dependencies:
       standardwebhooks:
-        specifier: ^1.1.1
+        specifier: 1.1.1
         version: 1.1.1
     devDependencies:
       '@arethetypeswrong/cli':
-        specifier: ^0.18.5
+        specifier: 0.18.5
         version: 0.18.5
       '@biomejs/biome':
-        specifier: ^2.6.7
+        specifier: 2.6.7
         version: 2.6.7
       '@react-email/render':
-        specifier: ^2.3.1
+        specifier: 2.3.1
         version: 2.3.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@types/node':
-        specifier: ^26.6.6
+        specifier: 26.6.6
         version: 26.6.6
       '@types/react':
-        specifier: ^19.3.0
+        specifier: 19.3.0
         version: 19.3.0
+      pkg-pr-new:
+        specifier: 0.0.94
+        version: 0.0.94
       publint:
-        specifier: ^0.3.25
+        specifier: 0.3.25
         version: 0.3.25
       react:
-        specifier: ^19.3.1
+        specifier: 19.3.1
         version: 19.3.1
       tsdown:
-        specifier: ^0.23.7
+        specifier: 0.23.7
         version: 0.23.7(@arethetypeswrong/core@0.18.5)(publint@0.3.25)(typescript@7.0.2)
       typescript:
-        specifier: ^7.0.2
+        specifier: 7.0.2
         version: 7.0.2
 
 packages:
@@ -672,6 +675,10 @@ packages:
   picomatch@4.0.7:
     resolution: {integrity: sha512-qcJu88Q2IWqJsDD529JKMdwGm/dvInW4HvQnRwiH9JtihJvzGOscDtHE3x1pBKeUOTysQ8kVmLnJ2kJu7yhcGA==}
     engines: {node: '>=12'}
+
+  pkg-pr-new@0.0.94:
+    resolution: {integrity: sha512-+s3ZZl1Vt3wHfsIRH+chHG6/3wsu1N+Z5jitNYAPc0GGCYR8xmju34UShzTAMosi4WAYFCXvp80LZZc/fXSdpQ==}
+    hasBin: true
 
   prettier@3.10.0:
     resolution: {integrity: sha512-mBi4765LgjO1PFjlEs7pUeK0nb1bw71c+N4/ItfeUWNdY5cV2pRKaFpbbFRYmDJMO+5ZwzGxHRqHxFZna7iv5w==}
@@ -1342,6 +1349,8 @@ snapshots:
   picocolors@1.1.1: {}
 
   picomatch@4.0.7: {}
+
+  pkg-pr-new@0.0.94: {}
 
   prettier@3.10.0: {}
 

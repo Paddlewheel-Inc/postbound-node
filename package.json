@@ -6,6 +6,7 @@
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.mts",
+  "sideEffects": false,
   "files": [
     "dist/**"
   ],
@@ -26,6 +27,10 @@
   },
   "scripts": {
     "build": "tsdown src/index.ts --format esm,cjs --dts",
+    "check": "pnpm lint && pnpm typecheck && pnpm check:pinned && pnpm check:source && pnpm build && pnpm check:package",
+    "check:package": "node scripts/verify-build.mjs && publint && attw --pack .",
+    "check:pinned": "node scripts/check-pinned.mjs",
+    "check:source": "node scripts/check-source.mjs",
     "lint": "biome check .",
     "lint:fix": "biome check . --write",
     "prepublishOnly": "pnpm run build",
@@ -50,17 +55,18 @@
     }
   },
   "dependencies": {
-    "standardwebhooks": "^1.1.1"
+    "standardwebhooks": "1.1.1"
   },
   "devDependencies": {
-    "@arethetypeswrong/cli": "^0.18.5",
-    "@biomejs/biome": "^2.6.7",
-    "@react-email/render": "^2.3.1",
-    "@types/node": "^26.6.6",
-    "@types/react": "^19.3.0",
-    "publint": "^0.3.25",
-    "react": "^19.3.1",
-    "tsdown": "^0.23.7",
-    "typescript": "^7.0.2"
+    "@arethetypeswrong/cli": "0.18.5",
+    "@biomejs/biome": "2.6.7",
+    "@react-email/render": "2.3.1",
+    "@types/node": "26.6.6",
+    "@types/react": "19.3.0",
+    "pkg-pr-new": "0.0.94",
+    "publint": "0.3.25",
+    "react": "19.3.1",
+    "tsdown": "0.23.7",
+    "typescript": "7.0.2"
   }
 }

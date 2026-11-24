@@ -1,6 +1,6 @@
 const dotSegment = /^\.{1,2}$/;
 
 export function hasDotSegment(requestPath: string): boolean {
-  const [pathname] = requestPath.split('?');
+  const pathname = requestPath.split('?')[0] ?? '';
   return pathname.split('/').some((segment) => dotSegment.test(segment));
 }

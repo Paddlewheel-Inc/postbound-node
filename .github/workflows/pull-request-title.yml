@@ -1,0 +1,32 @@
+name: Pull request title
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  pull-requests: read
+
+jobs:
+  title:
+    name: Conventional commit title
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: amannn/action-semantic-pull-request@e32d7e603df1aa1ba07e981f2a23455dee596825 # v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            docs
+            refactor
+            perf
+            build
+            ci
+            chore
+            revert
+          requireScope: false
+          subjectPattern: ^[a-z0-9].+$
+          subjectPatternError: The title after the colon must start with a lowercase letter or number.

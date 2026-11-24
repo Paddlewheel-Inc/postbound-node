@@ -15,7 +15,9 @@ This package sends requests with your API key to the Postbound API and handles y
 
 Issues and pull requests are welcome. For a bug, include the SDK version, your Node.js version, and the `request_id` from the error response if you have one. For a larger change, open an issue first so we can agree on the approach before you write the code.
 
-Pull requests are reviewed by the Postbound team, and a change is only released after a maintainer approves and merges it. Report security problems privately to the Postbound team instead of opening a public issue.
+Pull requests are reviewed by the Postbound team, and a change is only released after a maintainer approves and merges it. CI and CodeQL must pass before a pull request can be merged. See [CONTRIBUTING.md](CONTRIBUTING.md) for the code rules and the pull request process.
+
+Report security problems privately through [GitHub private vulnerability reporting](https://github.com/Paddlewheel-Inc/postbound-node/security/advisories/new) instead of opening a public issue. See [SECURITY.md](SECURITY.md).
 
 ## License and trademarks
 
@@ -81,6 +83,10 @@ pnpm build           # bundle ESM, CommonJS, and type declarations into dist
 pnpm lint            # Biome checks
 pnpm lint:fix        # apply Biome fixes
 pnpm typecheck       # TypeScript without emitting
+pnpm check:pinned    # require exact dependency versions
+pnpm check:source    # reject comments, suppressions, TODOs, and hardcoded keys in src
+pnpm check:package   # verify the built package exports and type resolution
+pnpm check           # run every check above, the same as CI
 ```
 
 ## Usage
@@ -1005,7 +1011,7 @@ What differs:
 - The SDK follows the shapes of the Postbound API. If an endpoint, field, or error name changes there, update the types and resource here to match.
 - Do not add comments to source files. Prefer clear names and small functions.
 - If you add a resource, export its types from `src/index.ts` and document it under Usage.
-- Run `pnpm lint`, `pnpm typecheck`, and `pnpm build` before opening a pull request.
+- Run `pnpm check` before opening a pull request. It runs the same checks as CI.
 
 ## Committing changes
 

@@ -20,6 +20,16 @@
     "enabled": true,
     "rules": {
       "preset": "recommended",
+      "suspicious": {
+        "noExplicitAny": "error",
+        "noConsole": { "level": "error", "options": { "allow": ["error"] } },
+        "noDebugger": "error",
+        "noTsIgnore": "error"
+      },
+      "correctness": {
+        "noUnusedImports": "error",
+        "noUnusedVariables": "error"
+      },
       "style": {
         "noParameterAssign": "error",
         "useAsConstAssertion": "error",
